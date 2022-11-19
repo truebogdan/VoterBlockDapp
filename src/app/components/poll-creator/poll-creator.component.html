@@ -1,0 +1,90 @@
+<div *ngIf="status == 'LOADING'" class="loading text-center loading-indicator">
+  <mat-spinner></mat-spinner>
+  <h3>{{ textStatus }}</h3>
+</div>
+
+<div *ngIf="status == 'DONE'" class="text-center">
+  <h3>The poll was created successfully</h3>
+  <button class="btn btn-primary" routerLink="/poll/{{ model.index }}">
+    View poll
+  </button>
+</div>
+<div *ngIf="status == 'NOT_STARTED'">
+  <div class="form-group" [formGroup]="pollForm">
+    <label for="name">Name:</label>
+    <input
+      type="text"
+      class="form-control"
+      id="poll-name"
+      formControlName="name"
+    />
+    <label for="deadline">Deadline:</label>
+    <input
+      type="datetime-local"
+      class="form-control"
+      id="deadline"
+      formControlName="deadline"
+      min="2022-11-17T16:41:12"
+    />
+    <label for="name">Voters:</label>
+    <input
+      type="file"
+      class="form-control"
+      id="poll-name"
+      formControlName="voters"
+      [writeFile]="true"
+      (change)="onFileChange($event.target)"
+    />
+    <label for="numberOfOptions">Number of options</label>
+    <input
+      type="number"
+      class="form-control"
+      id="numberOfOptions"
+      formControlName="numberOfOptions"
+      (change)="onNumberOfOptionsChanged()"
+      min="2"
+      max="10"
+    />
+  </div>
+  <div>
+    <mat-expansion-panel
+      hideToggle
+      *ngFor="let form of optionForms; index as i"
+      class="my-2"
+    >
+      <mat-expansion-panel-header>
+        <mat-panel-title> Option#{{ i + 1 }} </mat-panel-title>
+      </mat-expansion-panel-header>
+      <form class="form-group" [formGroup]="optionForms[i]">
+        <label for="name">Name: </label>
+        <input
+          class="form-control"
+          id="name"
+          type="text"
+          formControlName="name"
+        />
+        <label for="label">Label:</label>
+        <input
+          class="form-control"
+          id="label"
+          type="text"
+          formControlName="label"
+        />
+        <label for="image">Image:</label>
+        <input
+          class="form-control"
+          id="image"
+          type="file"
+          [writeFile]="true"
+          formControlName="image"
+          accept="image/*"
+        />
+      </form>
+    </mat-expansion-panel>
+    <div class="text-center">
+      <button class="btn btn-primary my-3" (click)="create()" type="button">
+        Create
+      </button>
+    </div>
+  </div>
+</div>

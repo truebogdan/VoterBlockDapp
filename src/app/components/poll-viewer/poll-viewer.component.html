@@ -1,0 +1,63 @@
+<div *ngIf="status == 'LOADING'" class="loading-indicator">
+  <mat-spinner class="text-center"></mat-spinner>
+</div>
+
+<div *ngIf="status !== 'LOADING'">
+  <h1 class="text-center">{{ model.index }}#{{ model.name }}</h1>
+  <h2 class="text-center">
+    <cd-timer
+      *ngIf="!hasExpired"
+      #basicTimer
+      [countdown]="true"
+      [startTime]="deadlineInSeconds"
+      [endTime]="0"
+      (onComplete)="closePoll()"
+    ></cd-timer>
+
+    <div *ngIf="hasExpired">The voting poll has expired</div>
+  </h2>
+  <div class="container">
+    <div class="row">
+      <div *ngFor="let v of model.votes; index as i" class="col">
+        <div class="card">
+          <img
+            src="{{ model.images[i] }}"
+            alt="{{ model.optionNames[i] }}"
+            style="height: 200px; width: 100%; object-fit: cover"
+          />
+          <h3>{{ model.optionNames[i] }}</h3>
+          <p class="title">{{ model.labels[i] }}</p>
+          <div *ngIf="status == 'READY'">
+            <p>{{ model.votes[i] }} votes</p>
+            <p>
+              <button
+                class="btn btn-primary"
+                [disabled]="isClosed"
+                (click)="sendVote(i)"
+              >
+                <span *ngIf="!isClosed">Vote</span>
+                <fa-icon *ngIf="isClosed" [icon]="faCoffee"></fa-icon>
+              </button>
+            </p>
+          </div>
+          <div *ngIf="status == 'LOCK'" class="d-flex justify-content-center">
+            <div class="spinner-border text-dark" role="status">
+              <span class="sr-only"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="chart-wrapper">
+      <canvas
+        baseChart
+        [data]="pieChartData"
+        [type]="pieChartType"
+        [options]="pieChartOptions"
+      >
+      </canvas>
+    </div>
+  </div>
+</div>
