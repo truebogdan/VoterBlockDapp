@@ -1,0 +1,69 @@
+<div class="card mx-auto my-3" style="width: 18rem">
+  <div class="card-body text-center">
+    <h1 class="card-title">VoterBlock NFTs</h1>
+    <div *ngIf="!nftDataIsLoading">
+      <h3 class="card-subtitle mb-2 text-muted">
+        {{ totalSupply }}/{{ maxSupply }}
+      </h3>
+      <button
+        class="btn btn-primary mx-auto"
+        [disabled]="disabledMint"
+        (click)="safeMint()"
+      >
+        MINT
+      </button>
+    </div>
+    <div *ngIf="nftDataIsLoading">
+      <mat-spinner class="mx-auto" [diameter]="30"></mat-spinner>
+    </div>
+  </div>
+</div>
+
+<div class="card mx-3 my-3">
+  <div class="card-header">
+    <fa-icon [icon]="faRefresh" (click)="refreshNFTs()"></fa-icon> Your NFTs
+  </div>
+  <div *ngIf="nftCardIsLoading" class="mx-auto">
+    <mat-spinner class="text-center" [diameter]="70"></mat-spinner>
+  </div>
+  <div *ngIf="nfts.length > 0 && !nftCardIsLoading" class="card-body nft-card">
+    <div *ngFor="let nft of nfts" class="thumbnail">
+      <img class="card-image" width="100" src="{{ nft.uri }}" />
+      <div class="overlay">
+        <div (click)="onStakeClicked(nft.id)" class="text">Stake</div>
+      </div>
+      <div class="post-content">
+        <h5 class="card-text top-left">#{{ nft.id }}</h5>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="nfts.length == 0 && !nftCardIsLoading" class="card-body">
+    Sorry but you have 0 NFTs
+  </div>
+</div>
+
+<div class="card mx-3 my-3">
+  <div class="card-header">
+    <fa-icon [icon]="faRefresh" (click)="refreshNFTs()"></fa-icon> Staked NFTs
+  </div>
+  <div *ngIf="nftCardIsLoading" class="mx-auto">
+    <mat-spinner class="text-center" [diameter]="70"></mat-spinner>
+  </div>
+  <div
+    *ngIf="stakedNfts.length > 0 && !nftCardIsLoading"
+    class="card-body nft-card"
+  >
+    <div *ngFor="let nft of stakedNfts" class="thumbnail">
+      <img class="card-image" width="100" src="{{ nft.uri }}" />
+      <div class="overlay">
+        <div (click)="onUnstakeClicked(nft.id)" class="text">Unstake</div>
+      </div>
+      <div class="post-content">
+        <h5 class="card-text top-left">#{{ nft.id }}</h5>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="stakedNfts.length == 0 && !nftCardIsLoading" class="card-body">
+    Sorry but you have 0 staked NFTs
+  </div>
+</div>

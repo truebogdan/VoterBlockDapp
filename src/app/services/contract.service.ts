@@ -2,6 +2,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { ethers } from 'ethers';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import SmartContractABI from '../../assets/SmartContractABI';
 import SmartContract from '../../assets/SmartContractABI';
 
 function _window(): any {
@@ -80,7 +81,7 @@ export class ContractService {
   }
 
   public async getPoll(number:number){
-    const voterBlockContract = new ethers.Contract(SmartContract.Adress, SmartContract.ABI, this.provider);
+    const voterBlockContract = new ethers.Contract(SmartContract.Address, SmartContract.ABI, this.provider);
     let poll = await voterBlockContract['getPoll'](number);
     return poll;
   }
@@ -112,7 +113,7 @@ export class ContractService {
 
   public async createPoll(name:string,optionNames:string[], deadline:number , voters:string[])
   {
-      const voterBlockContract = new ethers.Contract(SmartContract.Adress,SmartContract.ABI,this.provider.getSigner());
+      const voterBlockContract = new ethers.Contract(SmartContract.Address,SmartContract.ABI,this.provider.getSigner());
       console.log(this.provider.getSigner());
       let poll = await voterBlockContract['createPoll'](name,optionNames,deadline ,voters);
       voterBlockContract.on("PollCreated", pollIndex => {
@@ -123,7 +124,7 @@ export class ContractService {
 
   public async vote(option:string ,pollIndex:number)
   {
-    const voterBlockContract = new ethers.Contract(SmartContract.Adress,SmartContract.ABI,this.provider.getSigner());
+    const voterBlockContract = new ethers.Contract(SmartContract.Address,SmartContract.ABI,this.provider.getSigner());
     let voted = await voterBlockContract['voteForOption'](pollIndex,option);
     voterBlockContract.on('OptionVoted', totalVotes => {
       this.OptionVoted.next(totalVotes);
@@ -133,7 +134,86 @@ export class ContractService {
 
   public async canVote(index:number , address:string)
   {
-    const voterBlockContract = new ethers.Contract(SmartContract.Adress,SmartContract.ABI,this.provider.getSigner());
+    const voterBlockContract = new ethers.Contract(SmartContract.Address,SmartContract.ABI,this.provider.getSigner());
     return await voterBlockContract['canVote'](index,address);
+  }
+
+  public async fetchNftInfo()
+  {
+    const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider);
+    const MAX_SUPPLY =  await nftContract['MAX_SUPPLY']();
+    const totalSupply = await nftContract['totalSupply']();
+
+    return {totalSupply:totalSupply, maxSupply:MAX_SUPPLY};
+  }
+
+  public async getAllNFTs(address:string)
+  {
+    const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider);
+    const balance = await nftContract['balanceOf'](address);
+    let nfts = [];
+    for(let i =0 ;i<balance;i++)
+    {
+      let id = await nftContract['tokenOfOwnerByIndex'](address,i);
+      let imageUrl = await nftContract['tokenURI'](id);
+       nfts.push({id:id,uri:imageUrl});
+    }
+    return nfts;
+  }
+
+  public async getAllStakedNFTs(address:string){
+    const stakingContract = new ethers.Contract(SmartContract.StakingAddress, SmartContractABI.stakingABI, this.provider.getSigner());
+    const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider);
+    const stakes = await stakingContract['getStakes'](address);
+    console.log(stakes);
+    let stakedNfts = [];
+    for(let i= 0; i<stakes.length ; i++)
+    {
+      if(stakes[i].isWithdrawn === false){
+        let imageUrl = await nftContract['tokenURI'](stakes[i][0]);
+        stakedNfts.push({id:stakes[i][0] ,uri:imageUrl})
+      }
+
+    }
+    return stakedNfts;
+  }
+  public async safeMint()
+  {
+    const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider.getSigner());
+    var tx = await nftContract['safeMint']();
+    var reciept = await tx.wait();
+    console.log(reciept);
+  }
+
+  public async stakeNFT(id:any)
+  {
+    let isTokenApprovedForTransfer = await this.CheckApprovedForToken(id);
+    if(!isTokenApprovedForTransfer)
+    {
+    const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider.getSigner());
+    var tx = await nftContract['approve'](SmartContract.StakingAddress,id);
+    var reciept = await tx.wait();
+    console.log("Approved");
+    } 
+
+    const stakingContract = new ethers.Contract(SmartContract.StakingAddress, SmartContractABI.stakingABI, this.provider.getSigner());
+    tx = await stakingContract['stake'](id);
+    reciept = await tx.wait();
+    console.log("Staked");
+  }
+
+  public async unstakeNFT(id:any)
+  {
+    const stakingContract = new ethers.Contract(SmartContract.StakingAddress, SmartContractABI.stakingABI, this.provider.getSigner());
+    let tx = await stakingContract['unstake'](id);
+    await tx.wait();
+    console.log("Staked");
+  }
+
+  public async CheckApprovedForToken(id:number) :Promise<boolean>
+  {
+    const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider);
+    const approved= await nftContract['getApproved'](id);
+    return approved === SmartContract.StakingAddress
   }
 }

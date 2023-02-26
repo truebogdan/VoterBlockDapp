@@ -77,6 +77,7 @@ export class PollViewerComponent implements OnInit {
           if(address && !this.hasExpired)
           {
             this.contract.canVote(this.id,address).then(res => {
+              console.log(address , ' can vote: ', res)
               this.isClosed = !res ;
             });
           }

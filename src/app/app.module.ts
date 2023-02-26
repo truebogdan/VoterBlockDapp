@@ -15,6 +15,7 @@ import { NgChartsModule } from 'ng2-charts';
 import * as ChartDataLabels from 'chartjs-plugin-datalabels';
 import { CdTimerModule } from 'angular-cd-timer';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
+import { NftMinterComponent } from './components/nft-minter/nft-minter.component';
 
 
 @NgModule({
@@ -22,7 +23,8 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
     AppComponent,
     PollViewerComponent,
     NavbarComponent,
-    PollCreatorComponent
+    PollCreatorComponent,
+    NftMinterComponent
   ],
   imports: [
     MatExpansionModule,

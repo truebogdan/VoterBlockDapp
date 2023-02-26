@@ -51,6 +51,7 @@ export class PollCreatorComponent implements OnInit {
         this.model.images.push(form.value.image[0]);
       });
       this.textStatus="Processing transaction";
+      console.log("Model created:", this.model);
       let onPollCreated =  await this.contractService.createPoll(this.model.name, this.model.optionNames, this.model.deadline , this.model.voters);
       onPollCreated.subscribe( pollIndex => {
       this.model.index = pollIndex.toString();
