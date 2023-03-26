@@ -1,0 +1,151 @@
+<h3 class="my-5">Governance</h3>
+<div class="card mx-auto" style="width: 18rem">
+  <img src="..." class="card-img-top" alt="" />
+  <div class="card-body">
+    <h5 class="card-title">Voting power</h5>
+    <p class="card-text">{{ votingPower }}</p>
+  </div>
+</div>
+<button
+  class="btn btn-primary"
+  data-toggle="modal"
+  data-bs-toggle="modal"
+  data-bs-target="#exampleModal"
+>
+  New
+</button>
+
+<!-- Modal -->
+<div
+  class="modal fade"
+  id="exampleModal"
+  tabindex="-1"
+  aria-labelledby="exampleModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="exampleModalLabel">
+          Create a new governance proposal
+        </h1>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="exampleInputEmail1" class="form-label">Title</label>
+          <input
+            type="text"
+            class="form-control"
+            id="exampleInputEmail1"
+            aria-describedby="emailHelp"
+            [(ngModel)]="govtitle"
+          />
+        </div>
+        <div class="mb-3">
+          <label for="exampleInputEmail1" class="form-label"
+            >Proposal type:</label
+          >
+          <select class="form-select" (change)="onChange($event.target)">
+            <option value="1">Change creation cost</option>
+            <option value="2">Complete a PR for dApp</option>
+          </select>
+        </div>
+        <div class="mb-3" *ngIf="proposalType == 1">
+          <label for="exampleInputPassword1" class="form-label"
+            >Creation cost</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            id="exampleInputPassword1"
+            [(ngModel)]="govcost"
+          />
+        </div>
+        <div class="mb-3" *ngIf="proposalType == 2">
+          <label for="exampleInputPassword1" class="form-label"
+            >PR number</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            id="exampleInputPassword1"
+            [(ngModel)]="govcost"
+          />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" class="btn btn-primary" (click)="onSavePoll()">
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<br />
+<h3>Open proposals</h3>
+<dx-data-grid
+  id="gridContainer"
+  [dataSource]="openPolls"
+  keyExpr="ID"
+  [showBorders]="true"
+>
+  <dxi-column width="100" caption="Status" dataField="Status"></dxi-column>
+  <dxi-column dataField="Title" caption="Title"></dxi-column>
+  <dxi-column dataField="Effect" caption="Effect" width="50"></dxi-column>
+  <dxi-column dataField="CreatedBy" caption="Created by"></dxi-column>
+  <dxi-column dataField="Turnout" caption="Turnout" width="100"></dxi-column>
+  <dxi-column dataField="ClosesIn" caption="Closes in" width="150"></dxi-column>
+  <dxi-column type="buttons" caption="Actions">
+    <dxi-button
+      hint="Yes"
+      icon="todo"
+      [visible]="true"
+      [disabled]="isActionButtonDisabled"
+      [onClick]="actionYesClick"
+    ></dxi-button>
+    <dxi-button
+      hint="No"
+      icon="remove"
+      [visible]="true"
+      [disabled]="isActionButtonDisabled"
+      [onClick]="actionNoClick"
+    ></dxi-button>
+    <dxi-button
+      hint="Complete"
+      icon="chevrondoubleright"
+      [visible]="true"
+      [disabled]="isActionButtonDisabled"
+      [onClick]="actionCompleteClick"
+    ></dxi-button>
+  </dxi-column>
+  <dxi-column
+    caption="Result"
+    dataField="Result"
+    cellTemplate="discountCellTemplate"
+  ></dxi-column>
+
+  <div *dxTemplate="let cellInfo of 'discountCellTemplate'">
+    <div class="progress">
+      <div
+        class="progress-bar bg-success"
+        role="progressbar"
+        [ngStyle]="{ width: cellInfo.data.SuccessRate + '%' }"
+      ></div>
+      <div
+        class="progress-bar bg-danger"
+        role="progressbar"
+        [ngStyle]="{ width: 100 - cellInfo.data.SuccessRate + '%' }"
+      ></div>
+    </div>
+  </div>
+</dx-data-grid>
+<!--   [columns]="['Title', 'Effect', 'CreatedBy', 'Turnout', 'ClosesIn']" -->

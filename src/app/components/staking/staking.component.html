@@ -1,0 +1,32 @@
+<h3 class="my-5">Staking</h3>
+<div class="mx-3 my-3">
+  <app-account-balance
+    (onClaim)="claimReward()"
+    [balance]="balance"
+  ></app-account-balance>
+</div>
+<div class="card mx-3 my-3">
+  <div class="card-header">
+    <fa-icon [icon]="faRefresh" (click)="refreshNFTs()"></fa-icon> Staked NFTs
+  </div>
+  <div *ngIf="nftCardIsLoading" class="mx-auto">
+    <mat-spinner class="text-center" [diameter]="70"></mat-spinner>
+  </div>
+  <div
+    *ngIf="stakedNfts.length > 0 && !nftCardIsLoading"
+    class="card-body nft-card"
+  >
+    <div *ngFor="let nft of stakedNfts" class="thumbnail">
+      <img class="card-image" width="100" src="{{ nft.uri }}" />
+      <div class="overlay">
+        <div (click)="onUnstakeClicked(nft.id)" class="text">Unstake</div>
+      </div>
+      <div class="post-content">
+        <h5 class="card-text top-left">#{{ nft.id }}</h5>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="stakedNfts.length == 0 && !nftCardIsLoading" class="card-body">
+    Sorry but you have 0 staked NFTs
+  </div>
+</div>

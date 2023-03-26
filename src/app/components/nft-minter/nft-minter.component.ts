@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ContractService } from 'src/app/services/contract.service';
 import { faRefresh } from '@fortawesome/free-solid-svg-icons';
+import { MetadataApiService } from 'src/app/services/metadata-api.service';
 
 @Component({
   selector: 'app-nft-minter',
@@ -17,13 +18,21 @@ export class NftMinterComponent implements OnInit {
   public maxSupply:string='';
   public nfts:{id:any,uri:any}[] = [];
   public stakedNfts:{id:any,uri:any}[] = [];
-  constructor( private contract: ContractService) { 
+  public balance:string = '0';
+  constructor( private contract: ContractService, private MetadataService:MetadataApiService) { 
     
   }
 
   async ngOnInit(): Promise<void> {
     this.refreshNFTData();
     await this.refreshNFTs();
+    let balanceInWei = Number( await this.contract.getReward());
+    this.MetadataService.getPrice().subscribe(priceResponse=> {
+      let price =priceResponse['matic-network'].usd;
+      console.log(balanceInWei);
+      console.log(price);
+      this.balance = (price * balanceInWei).toPrecision(2);
+    });
     console.log(!this.nftCardIsLoading);
     console.log(this.nfts);
     console.log(!this.nfts);
@@ -68,6 +77,11 @@ export class NftMinterComponent implements OnInit {
    this.nftCardIsLoading = true;
    await this.contract.unstakeNFT(id);
    this.refreshNFTs(); 
+  }
+
+  async claimReward(){
+    await this.contract.claimReward();
+    this.balance = '0';
   }
 
 }

@@ -50,6 +50,7 @@ fa-icon {
   }
 
   .text:hover {
-    background-color: rgb(42, 67, 165);
+    background-color: rgb(87, 109, 198);
+    color: #ffffff;
     cursor: pointer;
   }

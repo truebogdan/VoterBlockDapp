@@ -4,11 +4,13 @@ import { ethers } from 'ethers';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import SmartContractABI from '../../assets/SmartContractABI';
 import SmartContract from '../../assets/SmartContractABI';
+import { completeProposalModel } from '../models/completeProposalModel';
 
 function _window(): any {
   // return the global native browser window object
   return window;
 }
+
 
 @Injectable({
   providedIn: 'root'
@@ -17,6 +19,7 @@ export class ContractService {
 
   private PollCreated : Subject<number> = new Subject();
   private OptionVoted : Subject<number> = new Subject();
+  private ProposalCompleted: Subject<completeProposalModel> = new Subject();
   private accountSubject: BehaviorSubject<string>;
   public account: Observable<string>;
   public networkChanged = new Subject<string>();
@@ -81,7 +84,7 @@ export class ContractService {
   }
 
   public async getPoll(number:number){
-    const voterBlockContract = new ethers.Contract(SmartContract.Address, SmartContract.ABI, this.provider);
+    const voterBlockContract = new ethers.Contract(SmartContract.VBAddress, SmartContract.VBABI, this.provider);
     let poll = await voterBlockContract['getPoll'](number);
     return poll;
   }
@@ -113,9 +116,17 @@ export class ContractService {
 
   public async createPoll(name:string,optionNames:string[], deadline:number , voters:string[])
   {
-      const voterBlockContract = new ethers.Contract(SmartContract.Address,SmartContract.ABI,this.provider.getSigner());
-      console.log(this.provider.getSigner());
-      let poll = await voterBlockContract['createPoll'](name,optionNames,deadline ,voters);
+      const voterBlockContract = new ethers.Contract(SmartContract.VBAddress,SmartContract.VBABI,this.provider.getSigner());
+      const pollCreationCost = await voterBlockContract['pollCreationCost']();
+      console.log(pollCreationCost);
+      const options = {value: pollCreationCost}
+
+
+      console.log(name);
+      console.log(optionNames);
+      console.log(voters);
+      console.log(options);
+      let poll = await voterBlockContract['createPoll'](name,optionNames,deadline ,voters, options);
       voterBlockContract.on("PollCreated", pollIndex => {
         this.PollCreated.next(pollIndex);
       });
@@ -124,7 +135,7 @@ export class ContractService {
 
   public async vote(option:string ,pollIndex:number)
   {
-    const voterBlockContract = new ethers.Contract(SmartContract.Address,SmartContract.ABI,this.provider.getSigner());
+    const voterBlockContract = new ethers.Contract(SmartContract.VBAddress,SmartContract.VBABI,this.provider.getSigner());
     let voted = await voterBlockContract['voteForOption'](pollIndex,option);
     voterBlockContract.on('OptionVoted', totalVotes => {
       this.OptionVoted.next(totalVotes);
@@ -134,7 +145,7 @@ export class ContractService {
 
   public async canVote(index:number , address:string)
   {
-    const voterBlockContract = new ethers.Contract(SmartContract.Address,SmartContract.ABI,this.provider.getSigner());
+    const voterBlockContract = new ethers.Contract(SmartContract.VBAddress,SmartContract.VBABI,this.provider.getSigner());
     return await voterBlockContract['canVote'](index,address);
   }
 
@@ -215,5 +226,138 @@ export class ContractService {
     const nftContract = new ethers.Contract(SmartContract.NFTAddress,SmartContract.nftABI, this.provider);
     const approved= await nftContract['getApproved'](id);
     return approved === SmartContract.StakingAddress
+  }
+
+  public async getReward() : Promise<string>
+  {
+    const voterBlockContract = new ethers.Contract(SmartContract.VBAddress,SmartContract.VBABI,this.provider.getSigner());
+    let reward = await voterBlockContract['rewardsMap'](this.getAccount());
+    console.log("address",this.getAccount());
+    console.log("reward",reward)
+    return ethers.utils.formatEther(reward);
+  }
+  
+  public async claimReward(){
+    const voterBlockContract = new ethers.Contract(SmartContract.VBAddress,SmartContract.VBABI,this.provider.getSigner());
+    let tx = await voterBlockContract['claimReward']();
+    await tx.wait();
+    console.log("Reward claimed");
+  }
+
+  public async getVotingPower(){
+    const governanceContract = new ethers.Contract(SmartContract.GovAddress, SmartContract.GovABI , this.provider);
+    return await governanceContract['getPowerForAddress'](this.getAccount());
+  }
+
+  public async createGovPoll(title:string, cost:number,type:number){
+    const governanceContract = new ethers.Contract(SmartContract.GovAddress, SmartContract.GovABI , this.provider.getSigner());
+    //let costInWei = cost * 1000000000000000000;
+    //console.log(costInWei);
+  
+    console.log(title,cost,type);
+    if(type == 1)
+    {
+      await governanceContract['createPoll'](title,ethers.utils.parseEther(cost.toString()), type);
+    }
+    if(type ==2 )
+    {
+      await governanceContract['createPoll'](title,cost, type);  
+    }
+  }
+
+  public async getAllPolls(): Promise<any[]>{
+    const governanceContract = new ethers.Contract(SmartContract.GovAddress, SmartContract.GovABI , this.provider);
+    let length = await governanceContract['getPollsNumber']();
+    let polls = [];
+    for(let i=0; i< length; i ++)
+    {
+      let poll = await governanceContract['polls'](i);
+      let pollData = await governanceContract['getPollData'](i);
+      console.log(poll);
+      console.log(pollData[2].filter((x: any)=> (x == true)).length/ pollData[2].length /100);
+      console.log(poll.deadline   - Date.now()/1000);
+      let processData = this.processData({...poll,...pollData},i);
+      console.log((processData.Target.indexOf(this.getAccount()?.toUpperCase())>=0));
+      if(processData.Target.indexOf(this.getAccount()?.toUpperCase())>=0){
+        processData.CanVote = true;
+      };
+      polls.push(processData);
+    }
+    console.log(polls);
+   return polls;
+  }
+
+  private processData(data:any, id:any){
+    console.log("data",data);
+    console.log(data[2].filter((x:any)=> x == true).length/data[2].length * 100);
+        return {
+        ID: id, 
+        Title:data.title,
+        Effect:ethers.utils.formatEther(data.effect),
+        CreatedBy:data.author,
+        Turnout:data[2].filter((x: any)=> (x == true)).length/ data[2].length  *100 + '%' ,
+        ClosesIn:this.secondsToHm(data.deadline   - Date.now()/1000),
+        Target:data[0].map((a: any) => a.toUpperCase()),
+        CanVote:false,
+        SuccessRate: this.CalculateSuccessRate(data.yes, data.no),
+        Status: this.CalculateStatus(data.deadline - Date.now()/1000,data.completed)
+      };
+    }
+ private CalculateStatus(remainingMs:any, isCompleted:any)
+ {
+    if(isCompleted == true)
+    {
+      return "COMPLETED";
+    }
+
+    if(remainingMs<0)
+    {
+      return "CLOSED";
+    }
+
+    return "LIVE";
+ }   
+ private secondsToHm(seconds:any) {
+      seconds = Number(seconds);
+      var h = Math.floor(seconds / 3600);
+      var m = Math.floor(seconds % 3600 / 60);
+  
+      var hDisplay = h > 0 ? h + "h " : "";
+      var mDisplay = m > 0 ? m + "m" : "";
+      return hDisplay + mDisplay;
+  }
+  
+   private CalculateSuccessRate(y:any,n:any){
+    let total = +y+ +n ;
+    if(total == 0)
+    {
+      return ""+50;
+    }
+
+    else{
+      return ""+(y / total * 100);
+    }
+
+
+  }
+
+  public async VoteYesForGovPoll(pollId:any){
+    const governanceContract = new ethers.Contract(SmartContract.GovAddress, SmartContract.GovABI , this.provider.getSigner());
+    await governanceContract["voteYes"](pollId);
+  }
+
+  public async VoteNoForGovPoll(pollId:any){
+    const governanceContract = new ethers.Contract(SmartContract.GovAddress, SmartContract.GovABI , this.provider.getSigner());
+    await governanceContract["voteNo"](pollId);
+  }
+
+  public async VoteCompleteForGovPoll(pollId:any){
+    const governanceContract = new ethers.Contract(SmartContract.GovAddress, SmartContract.GovABI , this.provider.getSigner());
+    await governanceContract["completePoll"](pollId);
+    governanceContract.on("ProposalCompleted", (_type,effect) => {
+      this.ProposalCompleted.next({_type:_type,effect:effect});
+    });
+
+    return this.ProposalCompleted.asObservable();
   }
 }

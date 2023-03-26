@@ -9,6 +9,7 @@ import { metadataModel } from '../models/metadataModel';
 })
 export class MetadataApiService {
 
+
   apiUrl:string = "https://localhost:7088/Poll";
   constructor(private http: HttpClient) { }
 
@@ -26,5 +27,15 @@ export class MetadataApiService {
 
   getMetadata(index:number):Observable<metadataModel>{
     return this.http.get<metadataModel>(this.apiUrl+'/GetMetadata/'+index);
+  }
+
+  getPrice():Observable<any>{
+   return this.http.get<any>("https://api.coingecko.com/api/v3/simple/price?ids=matic-network&vs_currencies=usd")
+  }
+
+  completePR(effect: any) {
+    let requestUrl = "https://localhost:7088/gov/complete/"+effect;
+    console.log("Complete request URL:", requestUrl);
+    this.http.get(requestUrl).subscribe();
   }
 }

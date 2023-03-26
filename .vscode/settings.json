@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/4dd4ba48-9b22-4a8b-8f40-b01134f8b875/resourceGroups/VoterBlockLicenta/providers/Microsoft.Web/sites/VoterBlock",
+    "appService.deploySubpath": "dist\\voter-block"
+}
