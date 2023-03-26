@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: voter-block    # set this to your application's name
+  AZURE_WEBAPP_NAME: 'VoterBlock'    # set this to your application's name
   AZURE_WEBAPP_PACKAGE_PATH: './dist'      # set this to the path to your web app project, defaults to the repository root
   NODE_VERSION: '16.15.0'                # set this to the node version to use
 
